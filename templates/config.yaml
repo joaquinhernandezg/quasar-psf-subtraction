@@ -1,0 +1,35 @@
+# General parameters
+project_name: "Substract quasar"
+catalog_origin: "SDSS DR16 QUASARS"
+comments: "Substract quasar from HSC image"
+
+catalog_filename: "data/catalogs/sdss_dr16_quasars.csv"
+ra_column: "ra"
+dec_column: "dec"
+id_column: "objid"
+
+ra_unit: "deg"
+dec_unit: "deg"
+
+
+output_directory: "data/results/"
+
+# Query parameters
+hsc_query:
+  output_download_hsc = "hsc_data"
+  data_release: "pdr2"
+  rerun: "pdr2_wide"
+  config_file: "config_file.txt"
+  filters: "all"
+  cutout_size: 5.0 # arcsec
+
+# GALFIT settings
+galfit:
+  substract_sky: True
+  r_mask_central_source: 10.0 # pix
+  only_mask_central_source: False
+  n_sigma_mask_sources: 3.0
+  run_single_band: True
+  run_multi_band: True
+  plot: True
+  pixel_scale: 0.262 # arcsec/pix

@@ -1,0 +1,18 @@
+================================================================================
+# IMAGE and GALFIT CONTROL PARAMETERS
+A) $input_image           # Input data image (FITS file)
+A1) $bands_names          # Band labels
+A2) $bands_waves     # Band wavelengths
+B) $output_block          # Output data image block
+C) $sigma_image    0.000  # Sigma image and min. sigma factor (made from data if blank or "none")
+D) $psf_image          # Input PSF image and (optional) diffusion kernel
+E) $psf_fine_sampling_factor                   # PSF fine sampling factor relative to data. Default 1
+F) $bad_pixel_mask      # Bad pixel mask (FITS image or ASCII coord list)
+G) $constraints_file                # File with parameter constraints (ASCII file)
+H) $x_min  $x_max   $y_min   $y_max   # Image region to fit (xmin xmax ymin ymax)
+I) $conv_size_x     $conv_size_y           # Size of the convolution box (x y)
+J) $phot_zeropoint               # Magnitude photometric zeropoint
+K) $plate_scale_x  $plate_scale_y        # Plate scale (dx dy)   [arcsec per pixel]
+O) regular             # Display type (regular, curses, both)
+P) 0                   # Choose: 0=optimize, 1=model, 2=imgblock, 3=subcomps
+W) blank,input,model,residual      # Output options

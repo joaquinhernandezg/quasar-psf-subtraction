@@ -1,0 +1,7 @@
+# Component number: 1
+ 0) psf                                              #  Component type
+ 1) $pos_x            $pos_x_free                    #      Position x
+ 2) $pos_y            $pos_y_free                    #      Position y
+ 3) $magnitude        $magnitude_free                #  Integrated magnitude
+ Z) $skip_model_output                                      #  Skip this model in output image?  (yes=1, no=0)
+ 

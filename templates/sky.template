@@ -1,0 +1,5 @@
+ 0) sky                    #  Component type
+ 1) $sky_level        $sky_level_free                 #  Sky background at center of fitting region [ADUs]
+ 2) $slope_x_sky      $slope_x_sky_free               #  dsky/dx (sky gradient in x)     [ADUs/pix]
+ 3) $slope_y_sky      $slope_y_sky_free               #  dsky/dy (sky gradient in y)     [ADUs/pix]
+ Z) $skip_model_output                                                 #  Skip this model in output image?  (yes=1, no=0)
