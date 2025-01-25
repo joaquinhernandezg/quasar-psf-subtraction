@@ -24,6 +24,7 @@ setup(
         'console_scripts': [
             'quasar_subtract_from_config = quasar_psf_subtraction.scripts.fit_catalog:main',  # 'my-script' is the terminal command, and `main` is the function to run
             'quasar_subtract_make_config = quasar_psf_subtraction.scripts.make_config_file:main',
+            'filter_catalog_hsc_pdr2_footprint = quasar_psf_subtraction.scripts.filter_catalog_hsc_pdr2_footprint:main',
         ],
     },
 

@@ -13,6 +13,8 @@ from astropy.table import Table
 from unagi import hsc
 from astropy.coordinates import SkyCoord
 from multiprocessing import Pool
+import matplotlib.pyplot as plt
+import shutil
 
 import matplotlib
 matplotlib.use("Agg")
@@ -173,13 +175,11 @@ def from_config_file(config_file):
     run_multi_band = config["galfit"]["run_multi_band"]
     plot = config["galfit"]["plot"]
 
-    from multiprocessing import Pool
 
 
 
     # copy config file inside output path
     os.makedirs(output_dir, exist_ok=True)
-    import shutil
     shutil.copy(config_file, os.path.join(output_dir, os.path.basename(config_file)))
 
     all_dicts = []

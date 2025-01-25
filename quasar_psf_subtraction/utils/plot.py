@@ -89,6 +89,17 @@ def plot_target_results(targname, data_path, ra=None, dec=None, pixscale=None):
         axs_row[2].contour(xx, yy, data_, levels=levels, colors="r", alpha=0.5)
         axs_row[0].contour(xx, yy, data_, levels=levels, colors="r", alpha=0.5)
 
+        x_start, x_end = center_x*0.8, center_x*0.9
+        y_start, y_end = center_y*0.8, center_y*0.9
+        axs_row[0].plot([x_start, x_end], [center_y, center_y], "r-", lw=1, alpha=0.5)
+        axs_row[0].plot([center_x, center_x], [y_start, y_end], "r-", lw=1, alpha=0.5)
+        axs_row[1].plot([x_start, x_end], [center_y, center_y], "r-", lw=1, alpha=0.5)
+        axs_row[1].plot([center_x, center_x], [y_start, y_end], "r-", lw=1, alpha=0.5)
+        axs_row[2].plot([x_start, x_end], [center_y, center_y], "r-", lw=1, alpha=0.5)
+        axs_row[2].plot([center_x, center_x], [y_start, y_end], "r-", lw=1, alpha=0.5)
+
+
+
 
         for ax in axs_row[:3]:
             ax.set_axis_off()
