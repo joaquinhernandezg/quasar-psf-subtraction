@@ -20,6 +20,12 @@ setup(
         "unagi",
 
     ],
+    entry_points={
+        'console_scripts': [
+            'quasar_subtract_from_config = quasar_psf_subtraction.scripts.fit_catalog:main',  # 'my-script' is the terminal command, and `main` is the function to run
+            'quasar_subtract_make_config = quasar_psf_subtraction.scripts.make_config_file:main',
+        ],
+    },
 
     python_requires=">=3.10.16",            # Supported Python versions
 )

@@ -13,11 +13,10 @@ from unagi import task
 
 
 
-def query_hsc(targname, ra_hh_mm_ss, dec_hh_mm_ss, archive, filters=None,
+def query_hsc(targname, coord, archive, filters=None,
               cutout_size=3*u.arcsec, output_basename="hsc_data"):
 
     #filters = 'gri'
-    coord = SkyCoord(ra_hh_mm_ss, dec_hh_mm_ss, unit=(u.hourangle, u.deg))
 
     if filters is None:
         coverage = task.hsc_check_coverage(coord, archive=archive, verbose=True)
