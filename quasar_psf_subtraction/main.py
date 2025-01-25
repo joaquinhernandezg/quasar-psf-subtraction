@@ -36,7 +36,6 @@ def fit_source(targname,
 
     # get the data and PSFs
     coord = SkyCoord(ra, dec, unit=(u.deg, u.deg))
-
     cutouts, psfs = query_hsc(targname, coord, archive,
                               filters=filters, cutout_size=cutout_size,
                               output_basename=output_download_basename)
@@ -92,6 +91,7 @@ def fit_source(targname,
         filenames_mask.append(filename_mask)
         filters_list.append(filter)
 
+
     make_run_galfit(output_dir, filenames_data, filenames_psf,
                     filenames_mask, filters_list, cutouts[0][1].data.shape,
                     single_band=run_single_band, multi_band=run_multi_band)
@@ -100,7 +100,40 @@ def fit_source(targname,
     if plot:
         fig, axs = plot_target_results(targname, data_path, ra=ra, dec=dec, pixscale=pixscale)
         fig.savefig(f"{output_dir}/results.pdf", bbox_inches='tight', dpi=300)
+        plt.close(fig)
 
+
+def run_mp(arguments_dict):
+    ra, dec, targname = arguments_dict["ra"], arguments_dict["dec"], arguments_dict["targname"]
+    ra_unit, dec_unit = arguments_dict["ra_unit"], arguments_dict["dec_unit"]
+    output_dir = arguments_dict["output_dir"]
+    archive = arguments_dict["archive"]
+    filters = arguments_dict["filters"]
+    cutout_size = arguments_dict["cutout_size"]
+    output_hsc = arguments_dict["output_hsc"]
+    plot = arguments_dict["plot"]
+    pix_scale = arguments_dict["pix_scale"]
+    substract_sky = arguments_dict["substract_sky"]
+    r_mask_central_source = arguments_dict["r_mask_central_source"]
+    n_sigma_mask_sources = arguments_dict["n_sigma_mask_sources"]
+    only_mask_central_source = arguments_dict["only_mask_central_source"]
+    run_single_band = arguments_dict["run_single_band"]
+    run_multi_band = arguments_dict["run_multi_band"]
+
+
+    coord = SkyCoord(ra, dec, unit=(u.Unit(ra_unit), u.Unit(dec_unit)))
+    ra_deg, dec_deg = coord.ra.deg, coord.dec.deg
+    fit_source(targname, output_dir, ra_deg, dec_deg, archive,
+            filters=None, cutout_size=cutout_size,
+            output_download_basename=output_hsc, plot=plot,
+            pixscale=pix_scale,
+            substract_sky=substract_sky,
+            r_mask_central_source=r_mask_central_source,
+            n_sigma_mask_sources=n_sigma_mask_sources,
+            only_central_mask=only_mask_central_source,
+            run_single_band=run_single_band,
+            run_multi_band=run_multi_band,
+            )
 
 def from_config_file(config_file):
     # table in csv format targname ra hh:mm:ss, dec hh:mm:ss
@@ -140,35 +173,32 @@ def from_config_file(config_file):
     run_multi_band = config["galfit"]["run_multi_band"]
     plot = config["galfit"]["plot"]
 
-
-    def run_mp(i):
-        ra, dec, targname = ra_list[i], dec_list[i], targname_list[i]
-        coord = SkyCoord(ra, dec, unit=(u.Unit(ra_unit), u.Unit(dec_unit)))
-        ra_deg, dec_deg = coord.ra.deg, coord.dec.deg
-        fit_source(targname, output_dir, ra_deg, dec_deg, archive,
-               filters=None, cutout_size=cutout_size,
-               output_download_basename=output_hsc, plot=plot,
-               pixscale=pix_scale,
-                substract_sky=substract_sky,
-                r_mask_central_source=r_mask_central_source,
-                n_sigma_mask_sources=n_sigma_mask_sources,
-                only_central_mask=only_mask_central_source,
-                run_single_band=run_single_band,
-                run_multi_band=run_multi_band,
-                )
+    from multiprocessing import Pool
 
 
-
-    from multiprocessing.dummy import Pool as ThreadPool
 
     # copy config file inside output path
     os.makedirs(output_dir, exist_ok=True)
     import shutil
     shutil.copy(config_file, os.path.join(output_dir, os.path.basename(config_file)))
 
-    p = ThreadPool(n_processes)
-    p.map(run_mp, range(len(ra_list)))
-    p.close()
-    p.join()
+    all_dicts = []
+    for i in range(len(ra_list)):
+        arguments_dict = {"ra": ra_list[i], "dec": dec_list[i], "targname": targname_list[i],
+                            "ra_unit": ra_unit, "dec_unit": dec_unit,
+                            "output_dir": output_dir, "archive": archive, "filters": None,
+                            "cutout_size": cutout_size, "output_hsc": output_hsc,
+                            "plot": plot, "pix_scale": pix_scale,
+                            "substract_sky": substract_sky,
+                            "r_mask_central_source": r_mask_central_source,
+                            "n_sigma_mask_sources": n_sigma_mask_sources,
+                            "only_mask_central_source": only_mask_central_source,
+                            "run_single_band": run_single_band,
+                            "run_multi_band": run_multi_band,
+                            }
+        all_dicts.append(arguments_dict)
+
+    with Pool(n_processes) as p:
+        p.map(run_mp, all_dicts)
 
     plot_all_targets(output_dir, f"{output_dir}/fits_results.pdf")
