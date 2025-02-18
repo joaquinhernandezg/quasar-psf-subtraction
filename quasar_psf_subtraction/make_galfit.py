@@ -20,7 +20,7 @@ def fill_template(template_file, params):
 
 
 def make_run_galfit(output_dir, filenames_data, filenames_psf, filenames_mask, bands, shape,
-                    single_band=True, multi_band=True, substract_sky=True):
+                    single_band=True, multi_band=True, substract_sky=True, fit_sky=True):
     #full path
     output_dir = os.path.join(os.getcwd(), output_dir)
     if not os.path.exists(output_dir):
@@ -30,7 +30,7 @@ def make_run_galfit(output_dir, filenames_data, filenames_psf, filenames_mask, b
     if multi_band:
         multi_band_dir = os.path.join(output_dir, 'galfit_multiband')
 
-        galfit_filename = make_galfit_multiband_file(multi_band_dir, filenames_data, filenames_psf, filenames_mask, bands, shape)
+        galfit_filename = make_galfit_multiband_file(multi_band_dir, filenames_data, filenames_psf, filenames_mask, bands, shape, fit_sky=fit_sky)
         os.system(f"galfitm {galfit_filename}")
 
     if single_band:
@@ -39,7 +39,7 @@ def make_run_galfit(output_dir, filenames_data, filenames_psf, filenames_mask, b
             config_filename = f"config_{band}.galfit"
             output_filename = f"output_{band}.fits"
             galfit_filename = make_galfit_multiband_file(single_band_dir, [filename_data], [filename_psf], [filename_mask], [band], shape,
-                                                         config_filename=config_filename, output_filename=output_filename)
+                                                         config_filename=config_filename, output_filename=output_filename, fit_sky=fit_sky)
             os.system(f"galfitm {galfit_filename}")
             print(f"Done with {band}")
 
@@ -52,7 +52,8 @@ def make_galfit_multiband_file(output_dir,
                               bands,
                               shape,
                               config_filename="config.galfit",
-                              output_filename="output.fits"):
+                              output_filename="output.fits",
+                              fit_sky=True):
     #full path
     #output_dir = os.path.join(os.getcwd(), output_dir)
     if not os.path.exists(output_dir):
@@ -129,7 +130,8 @@ def make_galfit_multiband_file(output_dir,
     with open(galfit_filename, "w") as f:
         f.write(galfit_content)
         f.write(psf_content)
-        f.write(sky_content)
+        if fit_sky:
+            f.write(sky_content)
 
     return galfit_filename
 

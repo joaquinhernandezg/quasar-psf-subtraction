@@ -15,6 +15,8 @@ from astropy.coordinates import SkyCoord
 from multiprocessing import Pool
 import matplotlib.pyplot as plt
 import shutil
+from pypdf import PdfWriter
+
 
 import matplotlib
 matplotlib.use("Agg")
@@ -34,7 +36,8 @@ def fit_source(targname,
                 run_single_band=True,
                 run_multi_band=True,
                 pixscale=None,
-                plot=True):
+                plot=True,
+                fit_sky=True):
 
     # get the data and PSFs
     coord = SkyCoord(ra, dec, unit=(u.deg, u.deg))
@@ -96,11 +99,12 @@ def fit_source(targname,
 
     make_run_galfit(output_dir, filenames_data, filenames_psf,
                     filenames_mask, filters_list, cutouts[0][1].data.shape,
-                    single_band=run_single_band, multi_band=run_multi_band)
+                    single_band=run_single_band, multi_band=run_multi_band,
+                    fit_sky=fit_sky)
 
 
     if plot:
-        fig, axs = plot_target_results(targname, data_path, ra=ra, dec=dec, pixscale=pixscale)
+        fig, axs = plot_target_results(targname, data_path, ra=ra, dec=dec, pixscale=pixscale, plot_size_arcsec=cutout_size.value)
         fig.savefig(f"{output_dir}/results.pdf", bbox_inches='tight', dpi=300)
         plt.close(fig)
 
@@ -121,6 +125,7 @@ def run_mp(arguments_dict):
     only_mask_central_source = arguments_dict["only_mask_central_source"]
     run_single_band = arguments_dict["run_single_band"]
     run_multi_band = arguments_dict["run_multi_band"]
+    fit_sky = arguments_dict["fit_sky"]
 
 
     coord = SkyCoord(ra, dec, unit=(u.Unit(ra_unit), u.Unit(dec_unit)))
@@ -135,6 +140,7 @@ def run_mp(arguments_dict):
             only_central_mask=only_mask_central_source,
             run_single_band=run_single_band,
             run_multi_band=run_multi_band,
+            fit_sky=fit_sky
             )
 
 def from_config_file(config_file):
@@ -150,11 +156,31 @@ def from_config_file(config_file):
     if fit_first_n is not None:
         fit_first_n = int(fit_first_n)
 
-    catalog = Table.read(config["catalog_filename"])
+
+
+    catalog = Table.read(config["catalog_filename"], format=config["catalog_format"])
     catalog = catalog[:fit_first_n]
 
     ra_column, dec_column, targname_column = config["ra_column"], config["dec_column"], config["targname_column"]
     ra_unit, dec_unit = config["ra_unit"], config["dec_unit"]
+
+    
+    if not targname_column:
+        targname_column = "targname"
+        ra, dec = catalog[ra_column], catalog[dec_column]
+        coord = SkyCoord(ra=ra, dec=dec, unit=(u.Unit(ra_unit), u.Unit(dec_unit)))
+
+        ra_hhmmss = coord.ra.to_string(unit="hour", sep=":", precision=2, pad=True)
+
+        dec_ddmmss = coord.dec.to_string(unit="deg", sep=":", precision=2, alwayssign=True, pad=True)
+        
+
+        ids = list(["J"+i+j for i, j in zip(ra_hhmmss, dec_ddmmss)])
+        catalog[targname_column] = ids
+        print(f"Creating a new column with the target name: {targname_column}")
+        print(catalog[targname_column])
+
+
     ra_list, dec_list, targname_list = catalog[ra_column], catalog[dec_column], catalog[targname_column]
     output_dir = config["output_dir"]
 
@@ -174,7 +200,7 @@ def from_config_file(config_file):
     run_single_band = config["galfit"]["run_single_band"]
     run_multi_band = config["galfit"]["run_multi_band"]
     plot = config["galfit"]["plot"]
-
+    fit_sky = config["galfit"]["fit_sky"]
 
 
 
@@ -195,10 +221,22 @@ def from_config_file(config_file):
                             "only_mask_central_source": only_mask_central_source,
                             "run_single_band": run_single_band,
                             "run_multi_band": run_multi_band,
+                            "fit_sky": fit_sky
                             }
         all_dicts.append(arguments_dict)
 
     with Pool(n_processes) as p:
         p.map(run_mp, all_dicts)
 
-    plot_all_targets(output_dir, f"{output_dir}/fits_results.pdf")
+
+    merger = PdfWriter()
+
+    for targname in os.listdir(output_dir):
+        import glob
+        path_read = os.path.join(output_dir, targname)
+        pdf_files = glob.glob(f"{path_read}/*.pdf")
+        if len(pdf_files):
+            merger.append(pdf_files[0])
+
+    merger.write(f"{output_dir}/fits_results.pdf")
+    merger.close()

@@ -4,9 +4,10 @@ catalog_origin: "SDSS DR16 QUASARS"
 comments: "Substract quasar from HSC image"
 
 catalog_filename: "data/catalogs/sdss_dr16_quasars.csv"
+catalog_format: "csv"
 ra_column: "ra"
 dec_column: "dec"
-targname_column: "objid"
+targname_column: null
 
 ra_unit: "deg"
 dec_unit: "deg"
@@ -30,6 +31,7 @@ hsc_query:
 # GALFIT settings
 galfit:
   substract_sky: True
+  fit_sky: True
   r_mask_central_source: 10.0 # pix
   only_mask_central_source: False
   n_sigma_mask_sources: 3.0

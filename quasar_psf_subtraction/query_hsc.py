@@ -22,6 +22,10 @@ def query_hsc(targname, coord, archive, filters=None,
         coverage = task.hsc_check_coverage(coord, archive=archive, verbose=True)
         filters = set(coverage["filter01"])
         filters = list(map(lambda x: x.split("-")[-1].lower(), filters))
+        for filter in filters:
+            if "NB" in filter:
+                filters.remove(filter)
+                print("Ignoring narrow band filter", filter)
     if not len(filters):
         return None, None
     # Output dir
