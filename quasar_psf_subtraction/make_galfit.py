@@ -6,6 +6,8 @@ from .query_hsc import query_hsc
 import numpy as np
 from astropy.io import fits
 import astropy.units as u
+import subprocess
+
 
 WAVES = {"u": 0.35*1000, "g": 0.48*1000, "r": 0.62*1000, "i": 0.75*1000, "z": 0.89*1000, "i2": 0.75*1000,
              "r2": 0.62*1000, "z2": 0.89*1000, "g2": 0.48*1000, "y": 1.0*1000}
@@ -20,7 +22,7 @@ def fill_template(template_file, params):
 
 
 def make_run_galfit(output_dir, filenames_data, filenames_psf, filenames_mask, bands, shape,
-                    single_band=True, multi_band=True, substract_sky=True, fit_sky=True):
+                    single_band=True, multi_band=True, substract_sky=True, fit_sky=True, targname=""):
     #full path
     output_dir = os.path.join(os.getcwd(), output_dir)
     if not os.path.exists(output_dir):
@@ -31,8 +33,17 @@ def make_run_galfit(output_dir, filenames_data, filenames_psf, filenames_mask, b
         multi_band_dir = os.path.join(output_dir, 'galfit_multiband')
 
         galfit_filename = make_galfit_multiband_file(multi_band_dir, filenames_data, filenames_psf, filenames_mask, bands, shape, fit_sky=fit_sky)
-        os.system(f"galfitm {galfit_filename}")
+        command = f"galfitm {galfit_filename}"
+        print("running command", command)
 
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+
+        if result.returncode == 0:
+            galfit_output_stream = result.stdout
+        else:
+            print(f"Error: {result.stderr}")
+
+    codes = []
     if single_band:
         single_band_dir = os.path.join(output_dir, 'galfit_singleband')
         for filename_data, filename_psf, filename_mask, band in zip(filenames_data, filenames_psf, filenames_mask, bands):
@@ -40,8 +51,41 @@ def make_run_galfit(output_dir, filenames_data, filenames_psf, filenames_mask, b
             output_filename = f"output_{band}.fits"
             galfit_filename = make_galfit_multiband_file(single_band_dir, [filename_data], [filename_psf], [filename_mask], [band], shape,
                                                          config_filename=config_filename, output_filename=output_filename, fit_sky=fit_sky)
-            os.system(f"galfitm {galfit_filename}")
-            print(f"Done with {band}")
+            #os.system(f"galfitm {galfit_filename}")
+            command = f"galfitm {galfit_filename}"
+            print("running command", command)
+
+
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+
+            if result.returncode == 0:
+                galfit_output_stream = result.stdout
+            else:
+                print(f"Error: {result.stderr}")
+                codes.append(1)
+
+            if "crashed" in result.stdout:
+                print(f"Error in {band}, GALFIT crashed for target {targname}")
+                codes.append(2)
+            else:               
+                print(f"Done with {band} for target {targname}")
+                codes.append(3)
+            
+    if np.all(np.array(codes) == 1):
+        status = "Error in all scripts"
+        return status
+    elif np.any(np.array(codes) == 2):
+        status = "GALFIT crashed"
+        return status
+    elif np.all(np.array(codes) == 3):
+        status = "Galfit ok"
+        return status
+    elif 3 in codes:
+        status = "Galfit ok for one band"
+        return status
+    else:
+        status = "Error in script"
+        return status
 
 
 

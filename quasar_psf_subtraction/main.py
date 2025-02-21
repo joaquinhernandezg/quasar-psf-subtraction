@@ -45,15 +45,16 @@ def fit_source(targname,
                               filters=filters, cutout_size=cutout_size,
                               output_basename=output_download_basename)
     if cutouts is None:
-        print("no data")
-        return
+        status = "No data found"
+        return status
 
     filters = list([hdu[0].header["FILTER"] for hdu in cutouts])
     output_dir = os.path.join(data_path, targname)
     os.makedirs(output_dir, exist_ok=True)
     if not len(cutouts):
         os.rmdir(output_dir)
-        return
+        status = "No data found"
+        return status
 
 
     filenames_data = []
@@ -97,16 +98,17 @@ def fit_source(targname,
         filters_list.append(filter)
 
 
-    make_run_galfit(output_dir, filenames_data, filenames_psf,
+    status = make_run_galfit(output_dir, filenames_data, filenames_psf,
                     filenames_mask, filters_list, cutouts[0][1].data.shape,
                     single_band=run_single_band, multi_band=run_multi_band,
-                    fit_sky=fit_sky)
+                    fit_sky=fit_sky, targname=targname)
 
 
     if plot:
         fig, axs = plot_target_results(targname, data_path, ra=ra, dec=dec, pixscale=pixscale, plot_size_arcsec=cutout_size.value)
         fig.savefig(f"{output_dir}/results.pdf", bbox_inches='tight', dpi=300)
         plt.close(fig)
+    return status
 
 
 def run_mp(arguments_dict):
@@ -130,7 +132,7 @@ def run_mp(arguments_dict):
 
     coord = SkyCoord(ra, dec, unit=(u.Unit(ra_unit), u.Unit(dec_unit)))
     ra_deg, dec_deg = coord.ra.deg, coord.dec.deg
-    fit_source(targname, output_dir, ra_deg, dec_deg, archive,
+    status = fit_source(targname, output_dir, ra_deg, dec_deg, archive,
             filters=None, cutout_size=cutout_size,
             output_download_basename=output_hsc, plot=plot,
             pixscale=pix_scale,
@@ -142,6 +144,7 @@ def run_mp(arguments_dict):
             run_multi_band=run_multi_band,
             fit_sky=fit_sky
             )
+    return status
 
 def from_config_file(config_file):
     # table in csv format targname ra hh:mm:ss, dec hh:mm:ss
@@ -157,9 +160,12 @@ def from_config_file(config_file):
         fit_first_n = int(fit_first_n)
 
 
-
+    print("Reading catalog")
     catalog = Table.read(config["catalog_filename"], format=config["catalog_format"])
-    catalog = catalog[:fit_first_n]
+    if fit_first_n ==-1:
+        catalog = catalog
+    else:
+        catalog = catalog[:fit_first_n]
 
     ra_column, dec_column, targname_column = config["ra_column"], config["dec_column"], config["targname_column"]
     ra_unit, dec_unit = config["ra_unit"], config["dec_unit"]
@@ -178,8 +184,6 @@ def from_config_file(config_file):
         ids = list(["J"+i+j for i, j in zip(ra_hhmmss, dec_ddmmss)])
         catalog[targname_column] = ids
         print(f"Creating a new column with the target name: {targname_column}")
-        print(catalog[targname_column])
-
 
     ra_list, dec_list, targname_list = catalog[ra_column], catalog[dec_column], catalog[targname_column]
     output_dir = config["output_dir"]
@@ -225,9 +229,16 @@ def from_config_file(config_file):
                             }
         all_dicts.append(arguments_dict)
 
+    print(f"Running {len(all_dicts)} fits")
     with Pool(n_processes) as p:
-        p.map(run_mp, all_dicts)
+        status = p.map(run_mp, all_dicts)
 
+    # write log file with status
+    log_filename = os.path.join(output_dir, "log_fits.txt")
+    with open(log_filename, "w") as f:
+        for i in range(len(status)):
+            # write targname, ra, dec, status
+            f.write(f"{targname_list[i]} {ra_list[i]} {dec_list[i]} {status[i].replace(' ', '_')}\n")
 
     merger = PdfWriter()
 

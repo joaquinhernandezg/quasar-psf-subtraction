@@ -39,6 +39,8 @@ def main():
 
     if release in ["pdr2_wide", "pdr2_dud", "pdr3_wide", "pdr3_dud"]:
         tract_dir = f"{module_path}/data/hsc_tracts/{release}"
+    else:
+        raise ValueError("Release not supported")
 
     table = filter_catalog_by_footprint(table, ra_column, dec_column, tract_dir, radec_units=args.radec_units)
 

@@ -1,0 +1,39 @@
+# General parameters
+project_name: "Substract quasar"
+catalog_origin: "makarov 2023"
+comments: "double quasars"
+
+catalog_filename: "double_quasars_makarov+2023_in_pdr2_wide_footprint.fits"
+catalog_format: "fits"
+ra_column: "RAdeg"
+dec_column: "DEdeg"
+targname_column: "WISEA"
+
+ra_unit: "deg"
+dec_unit: "deg"
+
+n_processes: 50
+fit_first: 10 # -1 to fit all sources
+
+output_dir: "CandidateDoubleAGNsfromGaiaWISE_pdr2_wide"
+
+# Query parameters
+hsc_query:
+  output_hsc: "hsc_data"
+  data_release: "pdr2"
+  rerun: "pdr2_wide"
+  config_file_credentials: "/data/estudiantes/jhernandez/hsc_credentials.txt" # modify accordingly
+  filters: "all"
+  cutout_size: 20.0 # arcsec
+  pixel_scale: 0.262 # arcsec/pix
+
+# GALFIT settings
+galfit:
+  substract_sky: True
+  fit_sky: False
+  r_mask_central_source: 10 # pix
+  only_mask_central_source: False
+  n_sigma_mask_sources: 2.0
+  run_single_band: True
+  run_multi_band: True
+  plot: True

@@ -8,6 +8,7 @@ from scipy.ndimage import gaussian_filter
 from matplotlib.backends.backend_pdf import PdfPages
 from astropy.coordinates import SkyCoord
 from astropy.stats import sigma_clipped_stats
+import urllib
 
 
 def plot_target_results_multiband(targname, data_path, ra=None, dec=None, pixscale=None):
@@ -220,11 +221,12 @@ def plot_target_results(targname, data_path, ra=None, dec=None, pixscale=None, p
         coord = SkyCoord(ra=ra, dec=dec, unit="deg")
         ra_hh_mm_ss = coord.ra.to_string(unit="hour", sep="", precision=2, pad=True)
         dec_dd_mm_ss = coord.dec.to_string(unit="deg", sep="", precision=1, pad=True, alwayssign=True)
-        url = f"http://cdsportal.u-strasbg.fr/?target=SDSS%20J{ra_hh_mm_ss}%20{dec_dd_mm_ss}"
+        url = f"http://cdsportal.u-strasbg.fr/?target=SDSS%20J{ra_hh_mm_ss}{dec_dd_mm_ss}"
+        url = urllib.parse.quote(url, safe=":/-?=&.")
 
-        ra_hhmmss = coord.ra.to_string(unit="hour", sep=":", precision=2)
-        dec_ddmmss = coord.dec.to_string(unit="deg", sep=":", precision=2)
-        title += f"\nJ{ra_hhmmss} {dec_ddmmss}"
+        ra_hhmmss = coord.ra.to_string(unit="hour", sep=":", precision=2, pad=True)
+        dec_ddmmss = coord.dec.to_string(unit="deg", sep=":", precision=2, alwayssign=True, pad=True)
+        title += f"\nJ{ra_hhmmss}{dec_ddmmss}"
 
         
         im.set_url(url)
